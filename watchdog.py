@@ -113,15 +113,16 @@ def fix_temporal_coverage(package_id):
     very_last = datetime(1000,5,14)
     time_field = 'start'
     resources = get_package_parameter(site,package_id,'resources',API_key)
-    resource_ids = [r['id'] for r in resources]
-    for resource_id in resource_ids:
-        first, last = find_extremes(resource_id,time_field)
-        first = parser.parse(first)
-        last = parser.parse(last)
-        if first < very_first:
-            very_first = first
-        if last > very_last:
-            very_last = last
+    for r in resources:
+        if r['datastore_active']:
+            resource_id = r['id']
+            first, last = find_extremes(resource_id,time_field)
+            first = parser.parse(first)
+            last = parser.parse(last)
+            if first < very_first:
+                very_first = first
+            if last > very_last:
+                very_last = last
 
     temporal_coverage = "{}/{}".format(very_first.date(),very_last.date())
     print("New temporal coverage for {} = {}".format(package_id,temporal_coverage))
