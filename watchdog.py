@@ -47,7 +47,7 @@ def set_package_parameters_to_values(site,package_id,parameters,new_values,API_k
         for parameter,new_value in zip(parameters,new_values):
             payload[parameter] = new_value
         results = ckan.action.package_patch(**payload)
-        print(results)
+        #print(results)
         print("Changed the parameters {} from {} to {} on package {}".format(parameters, original_values, new_values, package_id))
         success = True
     except:
@@ -126,9 +126,10 @@ def fix_temporal_coverage(package_id):
 
     temporal_coverage = "{}/{}".format(very_first.date(),very_last.date())
     print("New temporal coverage for {} = {}".format(package_id,temporal_coverage))
-    # [] Alter metadata for package
-    #set_package_parameters_to_values(site,package_id,[parameter],[temporal_coverage],API_key)
+    # Alter metadata for package
+    set_package_parameters_to_values(site,package_id,[parameter],[temporal_coverage],API_key)
 
+    # [ ] Maybe change very_last to an empty string if it is reasonably close to the present.
 from credentials import transactions_package_id
 fix_temporal_coverage(transactions_package_id)
 
