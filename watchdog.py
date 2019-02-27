@@ -107,7 +107,8 @@ def fix_temporal_coverage(package_id):
     from credentials import site, ckan_api_key as API_key
 
     parameter = "temporal_coverage"
-    print("Initial temporal coverage = {}".format(get_package_parameter(site,package_id,parameter=parameter,API_key=API_key)))
+    inital_value = get_package_parameter(site,package_id,parameter=parameter,API_key=API_key)
+    print("Initial temporal coverage = {}".format(initial_value))
     # Find all resources in package that have datastores.
     very_first = datetime(3000,4,13)
     very_last = datetime(1000,5,14)
@@ -127,7 +128,10 @@ def fix_temporal_coverage(package_id):
     temporal_coverage = "{}/{}".format(very_first.date(),very_last.date())
     print("New temporal coverage for {} = {}".format(package_id,temporal_coverage))
     # Alter metadata for package
-    set_package_parameters_to_values(site,package_id,[parameter],[temporal_coverage],API_key)
+    if initial_value != temporal_coverage:
+        set_package_parameters_to_values(site,package_id,[parameter],[temporal_coverage],API_key)
+    else:
+        print("No update needed. (Existing temporal coverage matches current temporal coverage.)")
 
     # [ ] Maybe change very_last to an empty string if it is reasonably close to the present.
 from credentials import transactions_package_id
