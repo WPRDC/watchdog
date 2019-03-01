@@ -107,7 +107,7 @@ def fix_temporal_coverage(package_id):
     from credentials import site, ckan_api_key as API_key
 
     parameter = "temporal_coverage"
-    inital_value = get_package_parameter(site,package_id,parameter=parameter,API_key=API_key)
+    initial_value = get_package_parameter(site,package_id,parameter=parameter,API_key=API_key)
     print("Initial temporal coverage = {}".format(initial_value))
     # Find all resources in package that have datastores.
     very_first = datetime(3000,4,13)
