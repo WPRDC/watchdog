@@ -3,7 +3,7 @@ import ckanapi
 from dateutil import parser
 
 import traceback
-from leash import fill_bowl, empty_bowl
+from leash import fill_bowl, empty_bowl, initially_leashed
 
 
 def get_metadata(site,resource_id,API_key=None):
@@ -171,10 +171,13 @@ def query_resource(site,query,API_key=None):
 def find_extremes(resource_id,field):
     from credentials import site, ckan_api_key as API_key
 
-    fill_bowl(resource_id)
-    query = 'SELECT min({}) AS smallest, max({}) as biggest FROM "{}" LIMIT 1'.format(field,field,resource_id)
+    toggle = initially_leashed(resource_id)
+    if toggle:
+        fill_bowl(resource_id)
+    query = 'SELECT min("{}") AS smallest, max("{}") as biggest FROM "{}" LIMIT 1'.format(field,field,resource_id)
     record = query_resource(site=site, query=query, API_key=API_key)[0]
-    empty_bowl(resource_id)
+    if toggle: # Strictly speaking this may not be necessary, as bowl-emptying may have no effect on some resources.
+        empty_bowl(resource_id)
     return record['smallest'], record['biggest']
 
 
