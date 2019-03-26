@@ -11,6 +11,81 @@ def get_metadata(site,resource_id,API_key=None):
 
     return metadata
 
+def create_resource_parameter(site,resource_id,parameter,value,API_key):
+    """Creates one parameter with the given value for the specified
+    resource."""
+    success = False
+    try:
+        ckan = ckanapi.RemoteCKAN(site, apikey=API_key)
+        payload = {}
+        payload['id'] = resource_id
+        payload[parameter] = value
+        #For example,
+        #   results = ckan.action.resource_patch(id=resource_id, url='#', url_type='')
+        results = ckan.action.resource_patch(**payload)
+        print(results)
+        print("Created the parameter {} with value {} for resource {}".format(parameter, value, resource_id))
+        success = True
+    except:
+        success = False
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        print("Error: {}".format(exc_type))
+        lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        print(''.join('!!! ' + line for line in lines))
+
+    return success
+
+def set_resource_parameters_to_values(site,resource_id,parameters,new_values,API_key):
+    """Sets the given resource parameters to the given values for the specified
+    resource.
+
+    This fails if the parameter does not currently exist. (In this case, use
+    create_resource_parameter().)"""
+    success = False
+    try:
+        ckan = ckanapi.RemoteCKAN(site, apikey=API_key)
+        original_values = [get_resource_parameter(site,resource_id,p,API_key) for p in parameters]
+        payload = {}
+        payload['id'] = resource_id
+        for parameter,new_value in zip(parameters,new_values):
+            payload[parameter] = new_value
+        #For example,
+        #   results = ckan.action.resource_patch(id=resource_id, url='#', url_type='')
+        results = ckan.action.resource_patch(**payload)
+        print(results)
+        print("Changed the parameters {} from {} to {} on resource {}".format(parameters, original_values, new_values, resource_id))
+        success = True
+    except:
+        success = False
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        print("Error: {}".format(exc_type))
+        lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        print(''.join('!!! ' + line for line in lines))
+
+    return success
+
+def get_resource_parameter(site,resource_id,parameter=None,API_key=None):
+    """Gets a CKAN resource parameter. If no parameter is specified, all metadata
+    for that resource is returned."""
+    # Some resource parameters you can fetch with this function are
+    # 'cache_last_updated', 'package_id', 'webstore_last_updated',
+    # 'datastore_active', 'id', 'size', 'state', 'hash',
+    # 'description', 'format', 'last_modified', 'url_type',
+    # 'mimetype', 'cache_url', 'name', 'created', 'url',
+    # 'webstore_url', 'mimetype_inner', 'position',
+    # 'revision_id', 'resource_type'
+    # Note that 'size' does not seem to be defined for tabular
+    # data on WPRDC.org. (It's not the number of rows in the resource.)
+    try:
+        ckan = ckanapi.RemoteCKAN(site, apikey=API_key)
+        metadata = get_metadata(ckan,resource_id,API_key)
+        if parameter is None:
+            return metadata
+        else:
+            return metadata[parameter]
+    except:
+        raise RuntimeError("Unable to obtain resource parameter '{}' for resource with ID {}".format(parameter,resource_id))
+
 def get_package_parameter(site,package_id,parameter=None,API_key=None):
     """Gets a CKAN package parameter. If no parameter is specified, all metadata
     for that package is returned."""
