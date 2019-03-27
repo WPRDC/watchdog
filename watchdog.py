@@ -208,7 +208,10 @@ def fix_temporal_coverage(package_id,time_field_lookup,test=False):
     print("New temporal coverage for {} = {}".format(package_id,temporal_coverage))
     # Alter metadata for package
     if initial_value != temporal_coverage:
-        set_package_parameters_to_values(site,package_id,[parameter],[temporal_coverage],API_key)
+        if not test:
+            set_package_parameters_to_values(site,package_id,[parameter],[temporal_coverage],API_key)
+        else:
+            print("No update made because this is just a test.")
     else:
         print("No update needed. (Existing temporal coverage matches current temporal coverage.)")
 
