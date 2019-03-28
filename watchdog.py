@@ -1,5 +1,5 @@
 from datetime import datetime
-import ckanapi
+import ckanapi, json
 from dateutil import parser
 
 import traceback
@@ -186,7 +186,8 @@ def fix_temporal_coverage(package_id,time_field_lookup,test=False):
 
     parameter = "temporal_coverage"
     initial_value = get_package_parameter(site,package_id,parameter=parameter,API_key=API_key)
-    print("Initial temporal coverage = {}".format(initial_value))
+    title = get_package_parameter(site,package_id,parameter="title",API_key=API_key)
+    print("Initial temporal coverage of {} = {}".format(title,initial_value))
     # Find all resources in package that have datastores.
     very_first = datetime(3000,4,13)
     very_last = datetime(1000,5,14)
@@ -205,7 +206,7 @@ def fix_temporal_coverage(package_id,time_field_lookup,test=False):
                     very_last = last
 
     temporal_coverage = "{}/{}".format(very_first.date(),very_last.date())
-    print("New temporal coverage for {} = {}".format(package_id,temporal_coverage))
+    print("New temporal coverage for {} ({}) = {}".format(title,package_id,temporal_coverage))
     # Alter metadata for package
     if initial_value != temporal_coverage:
         if not test:
