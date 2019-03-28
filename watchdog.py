@@ -217,6 +217,41 @@ def fix_temporal_coverage(package_id,time_field_lookup,test=False):
         print("No update needed. (Existing temporal coverage matches current temporal coverage.)")
 
     # [ ] Maybe change very_last to an empty string if it is reasonably close to the present.
-from credentials import transactions_package_id
-fix_temporal_coverage(transactions_package_id)
+from credentials import transactions_package_id, site, ckan_api_key as API_key
 
+# Get all packages and resources
+ckan = ckanapi.RemoteCKAN(site,apikey=API_key) # Without specifying
+# the apikey field value, the next line will only return non-private packages.
+try:
+    packages = ckan.action.current_package_list_with_resources(limit=999999)
+except:
+    packages = ckan.action.current_package_list_with_resources(limit=999999)
+
+# For packages where all tabular data has the same schema, the time_field metadata
+# field could be specified in the package-level metadata, like this:
+#  u'extras': [{u'key': u'time_field', u'value': u'CREATED_ON'}]
+
+# However, eventually, we will want to have a standardized column (with datetime
+# in a standard format, as well as a standard field name.
+
+# The other issue is that there are some packages which have different time fields
+# for different resources.
+#       Here, the time_field could be a JSON encoded look-up table, by resource ID.
+#           time_field = {"76fda9d0-69be-4dd5-8108-0de7907fc5a4": "CREATED_ON"}
+
+# Further, there are some tables where there are multiple time fields, and it may
+# not be clear which is the best one to use as the standard time field. The default
+# should probably be the one that is most representative of the datetime of the event
+# represented by that row.
+just_testing = True
+for package in packages:
+    if 'extras' in package:
+        extras_list = package['extras']
+        # The format is like this:
+        #       u'extras': [{u'key': u'dcat_issued', u'value': u'2014-01-07T15:27:45.000Z'}, ...
+        # not a dict, but a list of dicts.
+        extras = {d['key']: d['value'] for d in extras_list}
+        #if 'dcat_issued' not in extras:
+        if 'time_field' in extras:
+            time_field_lookup = json.loads(extras['time_field'])
+            fix_temporal_coverage(package['id'],time_field_lookup,just_testing)
