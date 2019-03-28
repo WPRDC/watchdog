@@ -1,5 +1,5 @@
 from datetime import datetime
-import ckanapi, json
+import ckanapi, json, sys
 from dateutil import parser
 
 import traceback
@@ -243,7 +243,10 @@ except:
 # not be clear which is the best one to use as the standard time field. The default
 # should probably be the one that is most representative of the datetime of the event
 # represented by that row.
-just_testing = True
+just_testing = False
+if len(sys.argv) > 1 and sys.argv[1] == "True":
+    just_testing = True
+
 for package in packages:
     if 'extras' in package:
         extras_list = package['extras']
