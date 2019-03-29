@@ -3,8 +3,8 @@ import ckanapi, json, sys
 from dateutil import parser
 
 import traceback
+from notify import send_to_slack
 from leash import fill_bowl, empty_bowl, initially_leashed
-
 
 def get_metadata(site,resource_id,API_key=None):
     metadata = ckan.action.resource_show(id=resource_id)
@@ -216,45 +216,63 @@ def fix_temporal_coverage(package_id,time_field_lookup,test=False):
     else:
         print("No update needed. (Existing temporal coverage matches current temporal coverage.)")
 
+def main(just_testing):
     # [ ] Maybe change very_last to an empty string if it is reasonably close to the present.
-from credentials import transactions_package_id, site, ckan_api_key as API_key
+    from credentials import transactions_package_id, site, ckan_api_key as API_key
 
-# Get all packages and resources
-ckan = ckanapi.RemoteCKAN(site,apikey=API_key) # Without specifying
-# the apikey field value, the next line will only return non-private packages.
+    # Get all packages and resources
+    ckan = ckanapi.RemoteCKAN(site,apikey=API_key) # Without specifying
+    # the apikey field value, the next line will only return non-private packages.
+    try:
+        packages = ckan.action.current_package_list_with_resources(limit=999999)
+    except:
+        packages = ckan.action.current_package_list_with_resources(limit=999999)
+
+    # For packages where all tabular data has the same schema, the time_field metadata
+    # field could be specified in the package-level metadata, like this:
+    #  u'extras': [{u'key': u'time_field', u'value': u'CREATED_ON'}]
+
+    # However, eventually, we will want to have a standardized column (with datetime
+    # in a standard format, as well as a standard field name.
+
+    # The other issue is that there are some packages which have different time fields
+    # for different resources.
+    #       Here, the time_field could be a JSON encoded look-up table, by resource ID.
+    #           time_field = {"76fda9d0-69be-4dd5-8108-0de7907fc5a4": "CREATED_ON"}
+
+    # Further, there are some tables where there are multiple time fields, and it may
+    # not be clear which is the best one to use as the standard time field. The default
+    # should probably be the one that is most representative of the datetime of the event
+    # represented by that row.
+    for package in packages:
+        if 'extras' in package:
+            extras_list = package['extras']
+            # The format is like this:
+            #       u'extras': [{u'key': u'dcat_issued', u'value': u'2014-01-07T15:27:45.000Z'}, ...
+            # not a dict, but a list of dicts.
+            extras = {d['key']: d['value'] for d in extras_list}
+            #if 'dcat_issued' not in extras:
+            if 'time_field' in extras:
+                time_field_lookup = json.loads(extras['time_field'])
+                fix_temporal_coverage(package['id'],time_field_lookup,just_testing)
+
+production = True
 try:
-    packages = ckan.action.current_package_list_with_resources(limit=999999)
+    if __name__ == '__main__':
+        just_testing = False
+        if len(sys.argv) > 1:
+            if sys.argv[1] == 'True':
+                just_testing = True
+            elif sys.argv[1] == 'False':
+                just_testing = False
+        main(just_testing=just_testing)
 except:
-    packages = ckan.action.current_package_list_with_resources(limit=999999)
-
-# For packages where all tabular data has the same schema, the time_field metadata
-# field could be specified in the package-level metadata, like this:
-#  u'extras': [{u'key': u'time_field', u'value': u'CREATED_ON'}]
-
-# However, eventually, we will want to have a standardized column (with datetime
-# in a standard format, as well as a standard field name.
-
-# The other issue is that there are some packages which have different time fields
-# for different resources.
-#       Here, the time_field could be a JSON encoded look-up table, by resource ID.
-#           time_field = {"76fda9d0-69be-4dd5-8108-0de7907fc5a4": "CREATED_ON"}
-
-# Further, there are some tables where there are multiple time fields, and it may
-# not be clear which is the best one to use as the standard time field. The default
-# should probably be the one that is most representative of the datetime of the event
-# represented by that row.
-just_testing = False
-if len(sys.argv) > 1 and sys.argv[1] == "True":
-    just_testing = True
-
-for package in packages:
-    if 'extras' in package:
-        extras_list = package['extras']
-        # The format is like this:
-        #       u'extras': [{u'key': u'dcat_issued', u'value': u'2014-01-07T15:27:45.000Z'}, ...
-        # not a dict, but a list of dicts.
-        extras = {d['key']: d['value'] for d in extras_list}
-        #if 'dcat_issued' not in extras:
-        if 'time_field' in extras:
-            time_field_lookup = json.loads(extras['time_field'])
-            fix_temporal_coverage(package['id'],time_field_lookup,just_testing)
+    e = sys.exc_info()[0]
+    msg = "Error: {} : \n".format(e)
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+    msg = ''.join('!! ' + line for line in lines)
+    msg = "watchdog.py failed for some reason.\n" + msg
+    print(msg) # Log it or whatever here
+    if not just_testing and production:
+        send_to_slack(msg,username='watchdog',channel='@david',icon=':doge:')
