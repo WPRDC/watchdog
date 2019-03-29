@@ -256,7 +256,7 @@ def main(just_testing):
                 time_field_lookup = json.loads(extras['time_field'])
                 fix_temporal_coverage(package['id'],time_field_lookup,just_testing)
 
-production = True
+from credentials import production
 try:
     if __name__ == '__main__':
         just_testing = False
