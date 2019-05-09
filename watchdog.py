@@ -53,7 +53,7 @@ def set_resource_parameters_to_values(site,resource_id,parameters,new_values,API
         #   results = ckan.action.resource_patch(id=resource_id, url='#', url_type='')
         results = ckan.action.resource_patch(**payload)
         print(results)
-        print("Changed the parameters {} from {} to {} on resource {}".format(parameters, original_values, new_values, resource_id))
+        print("* Changed the parameters {} from {} to {} on resource {} * ".format(parameters, original_values, new_values, resource_id))
         success = True
     except:
         success = False
