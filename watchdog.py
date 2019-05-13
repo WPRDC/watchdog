@@ -206,15 +206,15 @@ def fix_temporal_coverage(package_id,time_field_lookup,test=False):
                     very_last = last
 
     temporal_coverage = "{}/{}".format(very_first.date(),very_last.date())
-    print("New temporal coverage for {} ({}) = {}".format(title,package_id,temporal_coverage))
+    print("  New temporal coverage for {} ({}) = {}".format(title,package_id,temporal_coverage))
     # Alter metadata for package
     if initial_value != temporal_coverage:
         if not test:
             set_package_parameters_to_values(site,package_id,[parameter],[temporal_coverage],API_key)
         else:
-            print("No update made because this is just a test.")
+            print("  No update made because this is just a test.")
     else:
-        print("No update needed. (Existing temporal coverage matches current temporal coverage.)")
+        print("  No update needed. (Existing temporal coverage matches current temporal coverage.)")
 
 def main(just_testing):
     # [ ] Maybe change very_last to an empty string if it is reasonably close to the present.
